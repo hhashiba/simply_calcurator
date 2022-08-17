@@ -8,7 +8,7 @@ import Html.Events exposing (onClick)
 
 type alias Model =
     { result : Int
-    , input : Int
+    , input : Maybe Int
     , display : String
     , operator : Op
     }
@@ -35,7 +35,7 @@ type Msg
 init : Model
 init =
     { result = 0
-    , input = -1
+    , input = Nothing
     , display = ""
     , operator = None
     }
@@ -55,7 +55,7 @@ update msg model =
 
         PushClear ->
             { model
-                | input = -1
+                | input = Nothing
                 , display = ""
             }
 
@@ -68,17 +68,17 @@ updateInputNumber number model =
     if model.result /= 0 && (model.operator == None || model.operator == Equal) then
         model
 
-    else if model.input == -1 then
+    else if model.input == Nothing then
         inputNumberSub number model
 
     else
-        inputNumberSub (model.input * 10 + number) model
+        inputNumberSub (unwrapInput model.input * 10 + number) model
 
 
 inputNumberSub : Int -> Model -> Model
 inputNumberSub number model =
     { model
-        | input = number
+        | input = Just number
         , display = String.fromInt number
     }
 
@@ -93,26 +93,46 @@ inputNumberSub number model =
 6.  概ね計算実行ができる場合
 
 -}
+
+
+
+{- Maybe Intで考えるケース
+   1. 今-1で対応してるところをNothingにする
+   2. 計算実行する時に、Justに包まれた値を渡す必要がある
+   3.
+-}
+
+
+unwrapInput : Maybe Int -> Int
+unwrapInput maybeinput =
+    case maybeinput of
+        Just num ->
+            num
+
+        Nothing ->
+            0
+
+
 updatePushOperator : Op -> Model -> Model
 updatePushOperator op model =
     if model == init then
         model
 
-    else if model.result == 0 && model.input /= -1 then
+    else if model.result == 0 && model.input /= Nothing then
         { model
-            | result = model.input
-            , input = -1
+            | result = unwrapInput model.input
+            , input = Nothing
             , display = ""
             , operator = op
         }
 
-    else if model.result /= 0 && model.input /= -1 then
+    else if model.result /= 0 && model.input /= Nothing then
         updateCalcExcute op model
 
     else if model.operator == Equal || model.operator /= op then
         { model | operator = op }
 
-    else if model.input == -1 then
+    else if model.input == Nothing then
         model
 
     else
@@ -124,7 +144,7 @@ updatePushEqual model =
     if model.operator == None then
         model
 
-    else if model.input == -1 then
+    else if model.input == Nothing then
         case model.operator of
             Times ->
                 if model.display == "0" then
@@ -149,25 +169,29 @@ updatePushEqual model =
 
 updateCalcExcute : Op -> Model -> Model
 updateCalcExcute op model =
+    let
+        inputnum =
+            unwrapInput model.input
+    in
     case model.operator of
         Plus ->
-            calcSub (model.result + model.input) op model
+            calcSub (model.result + inputnum) op model
 
         Minus ->
-            if model.result < model.input then
+            if model.result < inputnum then
                 calcSub 0 op model
 
             else
-                calcSub (model.result - model.input) op model
+                calcSub (model.result - inputnum) op model
 
         Times ->
-            calcSub (model.result * model.input) op model
+            calcSub (model.result * inputnum) op model
 
         Devide ->
-            calcSub (model.result // model.input) op model
+            calcSub (model.result // inputnum) op model
 
         Modulo ->
-            calcSub (remainderBy model.input model.result) op model
+            calcSub (remainderBy inputnum model.result) op model
 
         _ ->
             model
@@ -177,7 +201,7 @@ calcSub : Int -> Op -> Model -> Model
 calcSub result op model =
     { model
         | result = result
-        , input = -1
+        , input = Nothing
         , display = String.fromInt result
         , operator = op
     }
@@ -237,6 +261,12 @@ view model =
             , button [ onClick PushEqual ] [ text "=" ]
             ]
         ]
+
+
+
+-- numButton : Int -> Html Msg
+-- numButton num =
+--     button [ onClick (PushNum num) ] [ text (String.fromInt num) ]
 
 
 main =

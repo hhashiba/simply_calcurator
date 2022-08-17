@@ -4371,10 +4371,8 @@ function _Browser_load(url)
 	}));
 }
 var $author$project$Calc$None = {$: 'None'};
-var $elm$core$Basics$negate = function (n) {
-	return -n;
-};
-var $author$project$Calc$init = {display: '', input: -1, operator: $author$project$Calc$None, result: 0};
+var $elm$core$Maybe$Nothing = {$: 'Nothing'};
+var $author$project$Calc$init = {display: '', input: $elm$core$Maybe$Nothing, operator: $author$project$Calc$None, result: 0};
 var $elm$core$Basics$EQ = {$: 'EQ'};
 var $elm$core$Basics$GT = {$: 'GT'};
 var $elm$core$Basics$LT = {$: 'LT'};
@@ -4481,7 +4479,6 @@ var $elm$core$Basics$add = _Basics_add;
 var $elm$core$Maybe$Just = function (a) {
 	return {$: 'Just', a: a};
 };
-var $elm$core$Maybe$Nothing = {$: 'Nothing'};
 var $elm$core$String$all = _String_all;
 var $elm$core$Basics$and = _Basics_and;
 var $elm$core$Basics$append = _Utils_append;
@@ -5192,13 +5189,24 @@ var $author$project$Calc$inputNumberSub = F2(
 			model,
 			{
 				display: $elm$core$String$fromInt(number),
-				input: number
+				input: $elm$core$Maybe$Just(number)
 			});
 	});
 var $elm$core$Basics$neq = _Utils_notEqual;
+var $author$project$Calc$unwrapInput = function (maybeinput) {
+	if (maybeinput.$ === 'Just') {
+		var num = maybeinput.a;
+		return num;
+	} else {
+		return 0;
+	}
+};
 var $author$project$Calc$updateInputNumber = F2(
 	function (number, model) {
-		return ((!(!model.result)) && (_Utils_eq(model.operator, $author$project$Calc$None) || _Utils_eq(model.operator, $author$project$Calc$Equal))) ? model : (_Utils_eq(model.input, -1) ? A2($author$project$Calc$inputNumberSub, number, model) : A2($author$project$Calc$inputNumberSub, (model.input * 10) + number, model));
+		return ((!(!model.result)) && (_Utils_eq(model.operator, $author$project$Calc$None) || _Utils_eq(model.operator, $author$project$Calc$Equal))) ? model : (_Utils_eq(model.input, $elm$core$Maybe$Nothing) ? A2($author$project$Calc$inputNumberSub, number, model) : A2(
+			$author$project$Calc$inputNumberSub,
+			($author$project$Calc$unwrapInput(model.input) * 10) + number,
+			model));
 	});
 var $author$project$Calc$calcSub = F3(
 	function (result, op, model) {
@@ -5206,25 +5214,26 @@ var $author$project$Calc$calcSub = F3(
 			model,
 			{
 				display: $elm$core$String$fromInt(result),
-				input: -1,
+				input: $elm$core$Maybe$Nothing,
 				operator: op,
 				result: result
 			});
 	});
 var $author$project$Calc$updateCalcExcute = F2(
 	function (op, model) {
+		var inputnum = $author$project$Calc$unwrapInput(model.input);
 		var _v0 = model.operator;
 		switch (_v0.$) {
 			case 'Plus':
-				return A3($author$project$Calc$calcSub, model.result + model.input, op, model);
+				return A3($author$project$Calc$calcSub, model.result + inputnum, op, model);
 			case 'Minus':
-				return (_Utils_cmp(model.result, model.input) < 0) ? A3($author$project$Calc$calcSub, 0, op, model) : A3($author$project$Calc$calcSub, model.result - model.input, op, model);
+				return (_Utils_cmp(model.result, inputnum) < 0) ? A3($author$project$Calc$calcSub, 0, op, model) : A3($author$project$Calc$calcSub, model.result - inputnum, op, model);
 			case 'Times':
-				return A3($author$project$Calc$calcSub, model.result * model.input, op, model);
+				return A3($author$project$Calc$calcSub, model.result * inputnum, op, model);
 			case 'Devide':
-				return A3($author$project$Calc$calcSub, (model.result / model.input) | 0, op, model);
+				return A3($author$project$Calc$calcSub, (model.result / inputnum) | 0, op, model);
 			case 'Modulo':
-				return A3($author$project$Calc$calcSub, model.result % model.input, op, model);
+				return A3($author$project$Calc$calcSub, model.result % inputnum, op, model);
 			default:
 				return model;
 		}
@@ -5233,7 +5242,7 @@ var $author$project$Calc$updatePushEqual = function (model) {
 	if (_Utils_eq(model.operator, $author$project$Calc$None)) {
 		return model;
 	} else {
-		if (_Utils_eq(model.input, -1)) {
+		if (_Utils_eq(model.input, $elm$core$Maybe$Nothing)) {
 			var _v0 = model.operator;
 			switch (_v0.$) {
 				case 'Times':
@@ -5250,11 +5259,16 @@ var $author$project$Calc$updatePushEqual = function (model) {
 };
 var $author$project$Calc$updatePushOperator = F2(
 	function (op, model) {
-		return _Utils_eq(model, $author$project$Calc$init) ? model : (((!model.result) && (!_Utils_eq(model.input, -1))) ? _Utils_update(
+		return _Utils_eq(model, $author$project$Calc$init) ? model : (((!model.result) && (!_Utils_eq(model.input, $elm$core$Maybe$Nothing))) ? _Utils_update(
 			model,
-			{display: '', input: -1, operator: op, result: model.input}) : (((!(!model.result)) && (!_Utils_eq(model.input, -1))) ? A2($author$project$Calc$updateCalcExcute, op, model) : ((_Utils_eq(model.operator, $author$project$Calc$Equal) || (!_Utils_eq(model.operator, op))) ? _Utils_update(
+			{
+				display: '',
+				input: $elm$core$Maybe$Nothing,
+				operator: op,
+				result: $author$project$Calc$unwrapInput(model.input)
+			}) : (((!(!model.result)) && (!_Utils_eq(model.input, $elm$core$Maybe$Nothing))) ? A2($author$project$Calc$updateCalcExcute, op, model) : ((_Utils_eq(model.operator, $author$project$Calc$Equal) || (!_Utils_eq(model.operator, op))) ? _Utils_update(
 			model,
-			{operator: op}) : (_Utils_eq(model.input, -1) ? model : A2($author$project$Calc$updateCalcExcute, op, model)))));
+			{operator: op}) : (_Utils_eq(model.input, $elm$core$Maybe$Nothing) ? model : A2($author$project$Calc$updateCalcExcute, op, model)))));
 	});
 var $author$project$Calc$update = F2(
 	function (msg, model) {
@@ -5270,7 +5284,7 @@ var $author$project$Calc$update = F2(
 			case 'PushClear':
 				return _Utils_update(
 					model,
-					{display: '', input: -1});
+					{display: '', input: $elm$core$Maybe$Nothing});
 			default:
 				return $author$project$Calc$init;
 		}
