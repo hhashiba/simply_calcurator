@@ -15,21 +15,21 @@ type alias Model =
 
 
 type Op
-    = Plus
-    | Minus
-    | Times
-    | Devide
-    | Modulo
-    | Equal
+    = Add
+    | Sub
+    | Mul
+    | Div
+    | Mod
+    | Eq
     | None
 
 
 type Msg
-    = PushNum Int
-    | PushOp Op
-    | PushEqual
-    | PushClear
-    | PushAllClear
+    = InputDigit Int
+    | InputOp Op
+    | InputEqual
+    | InputClear
+    | InputAllClear
 
 
 init : Model
@@ -44,35 +44,35 @@ init =
 update : Msg -> Model -> Model
 update msg model =
     case msg of
-        PushNum num ->
-            updateInputNumber num model
+        InputDigit num ->
+            pushDigit num model
 
-        PushOp op ->
-            updatePushOperator op model
+        InputOp op ->
+            pushOperator op model
 
-        PushEqual ->
-            updatePushEqual model
+        InputEqual ->
+            pushEqual model
 
-        PushClear ->
+        InputClear ->
             { model
                 | input = Nothing
                 , display = ""
             }
 
-        PushAllClear ->
+        InputAllClear ->
             init
 
 
-updateInputNumber : Int -> Model -> Model
-updateInputNumber number model =
-    if model.result /= 0 && (model.operator == None || model.operator == Equal) then
+pushDigit : Int -> Model -> Model
+pushDigit number model =
+    if model.result /= 0 && (model.operator == None || model.operator == Eq) then
         model
 
     else if model.input == Nothing then
         inputNumberSub number model
 
     else
-        inputNumberSub (unwrapInput model.input * 10 + number) model
+        inputNumberSub (unwrapMaybeInt model.input * 10 + number) model
 
 
 inputNumberSub : Int -> Model -> Model
@@ -93,69 +93,62 @@ inputNumberSub number model =
 6.  概ね計算実行ができる場合
 
 -}
-
-
-
-{- Maybe Intで考えるケース
-   1. 今-1で対応してるところをNothingにする
-   2. 計算実行する時に、Justに包まれた値を渡す必要がある
-   3.
--}
-
-
-unwrapInput : Maybe Int -> Int
-unwrapInput maybeinput =
+unwrapMaybeInt : Maybe Int -> Int
+unwrapMaybeInt maybeinput =
     case maybeinput of
-        Just num ->
-            num
+        Just item ->
+            item
 
         Nothing ->
             0
 
 
-updatePushOperator : Op -> Model -> Model
-updatePushOperator op model =
+pushOperator : Op -> Model -> Model
+pushOperator op model =
     if model == init then
         model
 
     else if model.result == 0 && model.input /= Nothing then
         { model
-            | result = unwrapInput model.input
+            | result = unwrapMaybeInt model.input
             , input = Nothing
-            , display = ""
+            , display = String.fromInt (unwrapMaybeInt model.input) ++ stringFromOp op
             , operator = op
         }
 
     else if model.result /= 0 && model.input /= Nothing then
-        updateCalcExcute op model
+        calcExecute op model
 
-    else if model.operator == Equal || model.operator /= op then
-        { model | operator = op }
+    else if model.operator == Eq || model.operator /= op then
+        { model
+            | display = model.display ++ stringFromOp op
+            , operator = op
+        }
 
     else if model.input == Nothing then
         model
 
     else
-        updateCalcExcute op model
+        calcExecute op model
 
 
-updatePushEqual : Model -> Model
-updatePushEqual model =
+pushEqual : Model -> Model
+pushEqual model =
     if model.operator == None then
         model
 
     else if model.input == Nothing then
         case model.operator of
-            Times ->
+            Mul ->
                 if model.display == "0" then
-                    updateCalcExcute Equal model
+                    calcExecute Eq model
 
                 else
                     model
 
-            Devide ->
+            Div ->
                 if model.display == "0" then
-                    updateCalcExcute Equal model
+                    calcExecute Eq model
 
                 else
                     model
@@ -164,33 +157,33 @@ updatePushEqual model =
                 model
 
     else
-        updateCalcExcute Equal model
+        calcExecute Eq model
 
 
-updateCalcExcute : Op -> Model -> Model
-updateCalcExcute op model =
+calcExecute : Op -> Model -> Model
+calcExecute op model =
     let
         inputnum =
-            unwrapInput model.input
+            unwrapMaybeInt model.input
     in
     case model.operator of
-        Plus ->
+        Add ->
             calcSub (model.result + inputnum) op model
 
-        Minus ->
+        Sub ->
             if model.result < inputnum then
                 calcSub 0 op model
 
             else
                 calcSub (model.result - inputnum) op model
 
-        Times ->
+        Mul ->
             calcSub (model.result * inputnum) op model
 
-        Devide ->
+        Div ->
             calcSub (model.result // inputnum) op model
 
-        Modulo ->
+        Mod ->
             calcSub (remainderBy inputnum model.result) op model
 
         _ ->
@@ -202,7 +195,7 @@ calcSub result op model =
     { model
         | result = result
         , input = Nothing
-        , display = String.fromInt result
+        , display = String.fromInt result ++ stringFromOp op
         , operator = op
     }
 
@@ -210,20 +203,20 @@ calcSub result op model =
 stringFromOp : Op -> String
 stringFromOp op =
     case op of
-        Plus ->
-            "+"
+        Add ->
+            " + "
 
-        Minus ->
-            "-"
+        Sub ->
+            " - "
 
-        Times ->
-            "×"
+        Mul ->
+            " * "
 
-        Devide ->
-            "÷"
+        Div ->
+            " / "
 
-        Modulo ->
-            "%"
+        Mod ->
+            " % "
 
         _ ->
             ""
@@ -233,40 +226,33 @@ view : Model -> Html Msg
 view model =
     div []
         [ div [ class "display" ] [ text model.display ]
-        , div [ class "display" ] [ text (stringFromOp model.operator) ]
         , div []
-            [ button [ onClick PushAllClear ] [ text "AC" ]
-            , button [ onClick PushClear ] [ text "C" ]
-            , button [ onClick (PushOp Modulo) ] [ text "%" ]
+            [ button [ onClick InputAllClear ] [ text "AC" ]
+            , button [ onClick InputClear ] [ text "C" ]
+            , button [ onClick (InputOp Mod) ] [ text "%" ]
             ]
         , div []
-            [ button [ onClick (PushNum 7) ] [ text "7" ]
-            , button [ onClick (PushNum 8) ] [ text "8" ]
-            , button [ onClick (PushNum 9) ] [ text "9" ]
-            , button [ onClick (PushOp Plus) ] [ text "+" ]
-            , button [ onClick (PushOp Minus) ] [ text "-" ]
+            [ button [ onClick (InputDigit 7) ] [ text "7" ]
+            , button [ onClick (InputDigit 8) ] [ text "8" ]
+            , button [ onClick (InputDigit 9) ] [ text "9" ]
+            , button [ onClick (InputOp Add) ] [ text "+" ]
+            , button [ onClick (InputOp Sub) ] [ text "-" ]
             ]
         , div []
-            [ button [ onClick (PushNum 4) ] [ text "4" ]
-            , button [ onClick (PushNum 5) ] [ text "5" ]
-            , button [ onClick (PushNum 6) ] [ text "6" ]
-            , button [ onClick (PushOp Times) ] [ text "×" ]
-            , button [ onClick (PushOp Devide) ] [ text "÷" ]
+            [ button [ onClick (InputDigit 4) ] [ text "4" ]
+            , button [ onClick (InputDigit 5) ] [ text "5" ]
+            , button [ onClick (InputDigit 6) ] [ text "6" ]
+            , button [ onClick (InputOp Mul) ] [ text "*" ]
+            , button [ onClick (InputOp Div) ] [ text "/" ]
             ]
         , div []
-            [ button [ onClick (PushNum 0) ] [ text "0" ]
-            , button [ onClick (PushNum 1) ] [ text "1" ]
-            , button [ onClick (PushNum 2) ] [ text "2" ]
-            , button [ onClick (PushNum 3) ] [ text "3" ]
-            , button [ onClick PushEqual ] [ text "=" ]
+            [ button [ onClick (InputDigit 0) ] [ text "0" ]
+            , button [ onClick (InputDigit 1) ] [ text "1" ]
+            , button [ onClick (InputDigit 2) ] [ text "2" ]
+            , button [ onClick (InputDigit 3) ] [ text "3" ]
+            , button [ onClick InputEqual ] [ text "=" ]
             ]
         ]
-
-
-
--- numButton : Int -> Html Msg
--- numButton num =
---     button [ onClick (PushNum num) ] [ text (String.fromInt num) ]
 
 
 main =

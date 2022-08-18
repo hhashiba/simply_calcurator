@@ -5182,7 +5182,7 @@ var $elm$browser$Browser$sandbox = function (impl) {
 			view: impl.view
 		});
 };
-var $author$project$Calc$Equal = {$: 'Equal'};
+var $author$project$Calc$Eq = {$: 'Eq'};
 var $author$project$Calc$inputNumberSub = F2(
 	function (number, model) {
 		return _Utils_update(
@@ -5193,95 +5193,121 @@ var $author$project$Calc$inputNumberSub = F2(
 			});
 	});
 var $elm$core$Basics$neq = _Utils_notEqual;
-var $author$project$Calc$unwrapInput = function (maybeinput) {
+var $author$project$Calc$unwrapMaybeInt = function (maybeinput) {
 	if (maybeinput.$ === 'Just') {
-		var num = maybeinput.a;
-		return num;
+		var item = maybeinput.a;
+		return item;
 	} else {
 		return 0;
 	}
 };
-var $author$project$Calc$updateInputNumber = F2(
+var $author$project$Calc$pushDigit = F2(
 	function (number, model) {
-		return ((!(!model.result)) && (_Utils_eq(model.operator, $author$project$Calc$None) || _Utils_eq(model.operator, $author$project$Calc$Equal))) ? model : (_Utils_eq(model.input, $elm$core$Maybe$Nothing) ? A2($author$project$Calc$inputNumberSub, number, model) : A2(
+		return ((!(!model.result)) && (_Utils_eq(model.operator, $author$project$Calc$None) || _Utils_eq(model.operator, $author$project$Calc$Eq))) ? model : (_Utils_eq(model.input, $elm$core$Maybe$Nothing) ? A2($author$project$Calc$inputNumberSub, number, model) : A2(
 			$author$project$Calc$inputNumberSub,
-			($author$project$Calc$unwrapInput(model.input) * 10) + number,
+			($author$project$Calc$unwrapMaybeInt(model.input) * 10) + number,
 			model));
 	});
+var $author$project$Calc$stringFromOp = function (op) {
+	switch (op.$) {
+		case 'Add':
+			return ' + ';
+		case 'Sub':
+			return ' - ';
+		case 'Mul':
+			return ' * ';
+		case 'Div':
+			return ' / ';
+		case 'Mod':
+			return ' % ';
+		default:
+			return '';
+	}
+};
 var $author$project$Calc$calcSub = F3(
 	function (result, op, model) {
 		return _Utils_update(
 			model,
 			{
-				display: $elm$core$String$fromInt(result),
+				display: _Utils_ap(
+					$elm$core$String$fromInt(result),
+					$author$project$Calc$stringFromOp(op)),
 				input: $elm$core$Maybe$Nothing,
 				operator: op,
 				result: result
 			});
 	});
-var $author$project$Calc$updateCalcExcute = F2(
+var $author$project$Calc$calcExecute = F2(
 	function (op, model) {
-		var inputnum = $author$project$Calc$unwrapInput(model.input);
+		var inputnum = $author$project$Calc$unwrapMaybeInt(model.input);
 		var _v0 = model.operator;
 		switch (_v0.$) {
-			case 'Plus':
+			case 'Add':
 				return A3($author$project$Calc$calcSub, model.result + inputnum, op, model);
-			case 'Minus':
+			case 'Sub':
 				return (_Utils_cmp(model.result, inputnum) < 0) ? A3($author$project$Calc$calcSub, 0, op, model) : A3($author$project$Calc$calcSub, model.result - inputnum, op, model);
-			case 'Times':
+			case 'Mul':
 				return A3($author$project$Calc$calcSub, model.result * inputnum, op, model);
-			case 'Devide':
+			case 'Div':
 				return A3($author$project$Calc$calcSub, (model.result / inputnum) | 0, op, model);
-			case 'Modulo':
+			case 'Mod':
 				return A3($author$project$Calc$calcSub, model.result % inputnum, op, model);
 			default:
 				return model;
 		}
 	});
-var $author$project$Calc$updatePushEqual = function (model) {
+var $author$project$Calc$pushEqual = function (model) {
 	if (_Utils_eq(model.operator, $author$project$Calc$None)) {
 		return model;
 	} else {
 		if (_Utils_eq(model.input, $elm$core$Maybe$Nothing)) {
 			var _v0 = model.operator;
 			switch (_v0.$) {
-				case 'Times':
-					return (model.display === '0') ? A2($author$project$Calc$updateCalcExcute, $author$project$Calc$Equal, model) : model;
-				case 'Devide':
-					return (model.display === '0') ? A2($author$project$Calc$updateCalcExcute, $author$project$Calc$Equal, model) : model;
+				case 'Mul':
+					return (model.display === '0') ? A2($author$project$Calc$calcExecute, $author$project$Calc$Eq, model) : model;
+				case 'Div':
+					return (model.display === '0') ? A2($author$project$Calc$calcExecute, $author$project$Calc$Eq, model) : model;
 				default:
 					return model;
 			}
 		} else {
-			return A2($author$project$Calc$updateCalcExcute, $author$project$Calc$Equal, model);
+			return A2($author$project$Calc$calcExecute, $author$project$Calc$Eq, model);
 		}
 	}
 };
-var $author$project$Calc$updatePushOperator = F2(
+var $author$project$Calc$pushOperator = F2(
 	function (op, model) {
 		return _Utils_eq(model, $author$project$Calc$init) ? model : (((!model.result) && (!_Utils_eq(model.input, $elm$core$Maybe$Nothing))) ? _Utils_update(
 			model,
 			{
-				display: '',
+				display: _Utils_ap(
+					$elm$core$String$fromInt(
+						$author$project$Calc$unwrapMaybeInt(model.input)),
+					$author$project$Calc$stringFromOp(op)),
 				input: $elm$core$Maybe$Nothing,
 				operator: op,
-				result: $author$project$Calc$unwrapInput(model.input)
-			}) : (((!(!model.result)) && (!_Utils_eq(model.input, $elm$core$Maybe$Nothing))) ? A2($author$project$Calc$updateCalcExcute, op, model) : ((_Utils_eq(model.operator, $author$project$Calc$Equal) || (!_Utils_eq(model.operator, op))) ? _Utils_update(
+				result: $author$project$Calc$unwrapMaybeInt(model.input)
+			}) : (((!(!model.result)) && (!_Utils_eq(model.input, $elm$core$Maybe$Nothing))) ? A2($author$project$Calc$calcExecute, op, model) : ((_Utils_eq(model.operator, $author$project$Calc$Eq) || (!_Utils_eq(model.operator, op))) ? _Utils_update(
 			model,
-			{operator: op}) : (_Utils_eq(model.input, $elm$core$Maybe$Nothing) ? model : A2($author$project$Calc$updateCalcExcute, op, model)))));
+			{
+				display: _Utils_ap(
+					model.display,
+					$author$project$Calc$stringFromOp(op)),
+				operator: op
+			}) : (_Utils_eq(model.input, $elm$core$Maybe$Nothing) ? model : A2($author$project$Calc$calcExecute, op, model)))));
 	});
 var $author$project$Calc$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
-			case 'PushNum':
+			case 'InputDigit':
 				var num = msg.a;
-				return A2($author$project$Calc$updateInputNumber, num, model);
-			case 'PushOp':
+				return A2($author$project$Calc$pushDigit, num, model);
+			case 'InputOp':
 				var op = msg.a;
-				return A2($author$project$Calc$updatePushOperator, op, model);
-			case 'PushEqual':
-				return $author$project$Calc$updatePushEqual(model);
-			case 'PushClear':
+				return A2($author$project$Calc$pushOperator, op, model);
+			case 'InputEqual':
+				return $author$project$Calc$pushEqual(model);
+			case 'InputClear':
 				return _Utils_update(
 					model,
 					{display: '', input: $elm$core$Maybe$Nothing});
@@ -5289,20 +5315,20 @@ var $author$project$Calc$update = F2(
 				return $author$project$Calc$init;
 		}
 	});
-var $author$project$Calc$Devide = {$: 'Devide'};
-var $author$project$Calc$Minus = {$: 'Minus'};
-var $author$project$Calc$Modulo = {$: 'Modulo'};
-var $author$project$Calc$Plus = {$: 'Plus'};
-var $author$project$Calc$PushAllClear = {$: 'PushAllClear'};
-var $author$project$Calc$PushClear = {$: 'PushClear'};
-var $author$project$Calc$PushEqual = {$: 'PushEqual'};
-var $author$project$Calc$PushNum = function (a) {
-	return {$: 'PushNum', a: a};
+var $author$project$Calc$Add = {$: 'Add'};
+var $author$project$Calc$Div = {$: 'Div'};
+var $author$project$Calc$InputAllClear = {$: 'InputAllClear'};
+var $author$project$Calc$InputClear = {$: 'InputClear'};
+var $author$project$Calc$InputDigit = function (a) {
+	return {$: 'InputDigit', a: a};
 };
-var $author$project$Calc$PushOp = function (a) {
-	return {$: 'PushOp', a: a};
+var $author$project$Calc$InputEqual = {$: 'InputEqual'};
+var $author$project$Calc$InputOp = function (a) {
+	return {$: 'InputOp', a: a};
 };
-var $author$project$Calc$Times = {$: 'Times'};
+var $author$project$Calc$Mod = {$: 'Mod'};
+var $author$project$Calc$Mul = {$: 'Mul'};
+var $author$project$Calc$Sub = {$: 'Sub'};
 var $elm$html$Html$button = _VirtualDom_node('button');
 var $elm$json$Json$Encode$string = _Json_wrap;
 var $elm$html$Html$Attributes$stringProperty = F2(
@@ -5331,22 +5357,6 @@ var $elm$html$Html$Events$onClick = function (msg) {
 		'click',
 		$elm$json$Json$Decode$succeed(msg));
 };
-var $author$project$Calc$stringFromOp = function (op) {
-	switch (op.$) {
-		case 'Plus':
-			return '+';
-		case 'Minus':
-			return '-';
-		case 'Times':
-			return '×';
-		case 'Devide':
-			return '÷';
-		case 'Modulo':
-			return '%';
-		default:
-			return '';
-	}
-};
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $author$project$Calc$view = function (model) {
@@ -5367,17 +5377,6 @@ var $author$project$Calc$view = function (model) {
 					])),
 				A2(
 				$elm$html$Html$div,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('display')
-					]),
-				_List_fromArray(
-					[
-						$elm$html$Html$text(
-						$author$project$Calc$stringFromOp(model.operator))
-					])),
-				A2(
-				$elm$html$Html$div,
 				_List_Nil,
 				_List_fromArray(
 					[
@@ -5385,7 +5384,7 @@ var $author$project$Calc$view = function (model) {
 						$elm$html$Html$button,
 						_List_fromArray(
 							[
-								$elm$html$Html$Events$onClick($author$project$Calc$PushAllClear)
+								$elm$html$Html$Events$onClick($author$project$Calc$InputAllClear)
 							]),
 						_List_fromArray(
 							[
@@ -5395,7 +5394,7 @@ var $author$project$Calc$view = function (model) {
 						$elm$html$Html$button,
 						_List_fromArray(
 							[
-								$elm$html$Html$Events$onClick($author$project$Calc$PushClear)
+								$elm$html$Html$Events$onClick($author$project$Calc$InputClear)
 							]),
 						_List_fromArray(
 							[
@@ -5406,7 +5405,7 @@ var $author$project$Calc$view = function (model) {
 						_List_fromArray(
 							[
 								$elm$html$Html$Events$onClick(
-								$author$project$Calc$PushOp($author$project$Calc$Modulo))
+								$author$project$Calc$InputOp($author$project$Calc$Mod))
 							]),
 						_List_fromArray(
 							[
@@ -5423,7 +5422,7 @@ var $author$project$Calc$view = function (model) {
 						_List_fromArray(
 							[
 								$elm$html$Html$Events$onClick(
-								$author$project$Calc$PushNum(7))
+								$author$project$Calc$InputDigit(7))
 							]),
 						_List_fromArray(
 							[
@@ -5434,7 +5433,7 @@ var $author$project$Calc$view = function (model) {
 						_List_fromArray(
 							[
 								$elm$html$Html$Events$onClick(
-								$author$project$Calc$PushNum(8))
+								$author$project$Calc$InputDigit(8))
 							]),
 						_List_fromArray(
 							[
@@ -5445,7 +5444,7 @@ var $author$project$Calc$view = function (model) {
 						_List_fromArray(
 							[
 								$elm$html$Html$Events$onClick(
-								$author$project$Calc$PushNum(9))
+								$author$project$Calc$InputDigit(9))
 							]),
 						_List_fromArray(
 							[
@@ -5456,7 +5455,7 @@ var $author$project$Calc$view = function (model) {
 						_List_fromArray(
 							[
 								$elm$html$Html$Events$onClick(
-								$author$project$Calc$PushOp($author$project$Calc$Plus))
+								$author$project$Calc$InputOp($author$project$Calc$Add))
 							]),
 						_List_fromArray(
 							[
@@ -5467,7 +5466,7 @@ var $author$project$Calc$view = function (model) {
 						_List_fromArray(
 							[
 								$elm$html$Html$Events$onClick(
-								$author$project$Calc$PushOp($author$project$Calc$Minus))
+								$author$project$Calc$InputOp($author$project$Calc$Sub))
 							]),
 						_List_fromArray(
 							[
@@ -5484,7 +5483,7 @@ var $author$project$Calc$view = function (model) {
 						_List_fromArray(
 							[
 								$elm$html$Html$Events$onClick(
-								$author$project$Calc$PushNum(4))
+								$author$project$Calc$InputDigit(4))
 							]),
 						_List_fromArray(
 							[
@@ -5495,7 +5494,7 @@ var $author$project$Calc$view = function (model) {
 						_List_fromArray(
 							[
 								$elm$html$Html$Events$onClick(
-								$author$project$Calc$PushNum(5))
+								$author$project$Calc$InputDigit(5))
 							]),
 						_List_fromArray(
 							[
@@ -5506,7 +5505,7 @@ var $author$project$Calc$view = function (model) {
 						_List_fromArray(
 							[
 								$elm$html$Html$Events$onClick(
-								$author$project$Calc$PushNum(6))
+								$author$project$Calc$InputDigit(6))
 							]),
 						_List_fromArray(
 							[
@@ -5517,22 +5516,22 @@ var $author$project$Calc$view = function (model) {
 						_List_fromArray(
 							[
 								$elm$html$Html$Events$onClick(
-								$author$project$Calc$PushOp($author$project$Calc$Times))
+								$author$project$Calc$InputOp($author$project$Calc$Mul))
 							]),
 						_List_fromArray(
 							[
-								$elm$html$Html$text('×')
+								$elm$html$Html$text('*')
 							])),
 						A2(
 						$elm$html$Html$button,
 						_List_fromArray(
 							[
 								$elm$html$Html$Events$onClick(
-								$author$project$Calc$PushOp($author$project$Calc$Devide))
+								$author$project$Calc$InputOp($author$project$Calc$Div))
 							]),
 						_List_fromArray(
 							[
-								$elm$html$Html$text('÷')
+								$elm$html$Html$text('/')
 							]))
 					])),
 				A2(
@@ -5545,7 +5544,7 @@ var $author$project$Calc$view = function (model) {
 						_List_fromArray(
 							[
 								$elm$html$Html$Events$onClick(
-								$author$project$Calc$PushNum(0))
+								$author$project$Calc$InputDigit(0))
 							]),
 						_List_fromArray(
 							[
@@ -5556,7 +5555,7 @@ var $author$project$Calc$view = function (model) {
 						_List_fromArray(
 							[
 								$elm$html$Html$Events$onClick(
-								$author$project$Calc$PushNum(1))
+								$author$project$Calc$InputDigit(1))
 							]),
 						_List_fromArray(
 							[
@@ -5567,7 +5566,7 @@ var $author$project$Calc$view = function (model) {
 						_List_fromArray(
 							[
 								$elm$html$Html$Events$onClick(
-								$author$project$Calc$PushNum(2))
+								$author$project$Calc$InputDigit(2))
 							]),
 						_List_fromArray(
 							[
@@ -5578,7 +5577,7 @@ var $author$project$Calc$view = function (model) {
 						_List_fromArray(
 							[
 								$elm$html$Html$Events$onClick(
-								$author$project$Calc$PushNum(3))
+								$author$project$Calc$InputDigit(3))
 							]),
 						_List_fromArray(
 							[
@@ -5588,7 +5587,7 @@ var $author$project$Calc$view = function (model) {
 						$elm$html$Html$button,
 						_List_fromArray(
 							[
-								$elm$html$Html$Events$onClick($author$project$Calc$PushEqual)
+								$elm$html$Html$Events$onClick($author$project$Calc$InputEqual)
 							]),
 						_List_fromArray(
 							[
